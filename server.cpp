@@ -75,8 +75,8 @@ DWORD GetFileProc(int nCurrentPos, SOCKET client, std::string filePath)
 
 void show_file(char path[], char root[], HZIP hz, int level = 0)
 {
-    char find_path[128];
-    char dir_path[128];
+    char find_path[FILE_NAME_MAX_SIZE];
+    char dir_path[FILE_NAME_MAX_SIZE];
     sprintf(find_path, "%s*", path);
     WIN32_FIND_DATA FindFileData;
     HANDLE hFind;
@@ -118,148 +118,163 @@ void show_file(char path[], char root[], HZIP hz, int level = 0)
 
 char* ZIP(char* FilePath)
 {
+
     char* folderPath = new char[FILE_NAME_MAX_SIZE];
     char* zipPath = new char[FILE_NAME_MAX_SIZE];
     char* saveZip = new char[FILE_NAME_MAX_SIZE];
 
-
+  
     bool should_change = true;
     char* szPath = FilePath;
     //char szPath[] = "G:/CN-project2/compress (2)/compress/compress/abc/";
     //char szPath[] = "G:/CN-project2/compress (2)/compress/compress/test.txt";
-    
-    std::string directory;
-
     int szLength = strlen(szPath);
-    std::string SzPath(szPath);
-    const size_t last_slash_idx = SzPath.rfind('/');
-    if (std::string::npos != last_slash_idx)
+    std::string directory;
+    char zp[] = ".zip";
+    bool tk = 1;
+    for (int i = 0; i < 4; i++)
     {
-        directory = SzPath.substr(0, last_slash_idx);
+        if (zp[i] != szPath[szLength - 4 + i])
+        {
+            tk = 0;
+            break;
+        }
     }
-    directory += "/";    
-    SzPath.erase(0, directory.length());
-    
-    directory += "transTEMP";
-    char newFolder[FILE_NAME_MAX_SIZE];
-    char newFile[FILE_NAME_MAX_SIZE];
-    SzPath = directory+'/'+SzPath;
-    //std::cout << SzPath << std::endl;
-    strncpy(newFolder, directory.c_str(), directory.length() + 1);
-    strncpy(newFile, SzPath.c_str(), SzPath.length() + 1);
 
-    if (0 != access(directory.c_str(), 0))
+    if(tk)
     {
-        // if this folder not exist, create a new one.
-        mkdir(directory.c_str());   // 返回 0 表示创建成功，-1 表示失败
-        //换成 ::_mkdir  ::_access 也行，不知道什么意思
-    }
-    strncpy(folderPath, (directory+"/").c_str(), (directory + "/").length() + 1);
-   
-    directory += ".zip";
-    CopyFile(szPath, newFile,false);
+        std::string SzPath(szPath);
+        const size_t last_slash_idx = SzPath.rfind('/');
+        if (std::string::npos != last_slash_idx)
+        {
+            directory = SzPath.substr(0, last_slash_idx);
+        }
+        directory += "/";
+        SzPath.erase(0, directory.length());
 
-   
-    std::cout << folderPath << std::endl;
+        directory += "transTEMP";
+        char newFolder[FILE_NAME_MAX_SIZE];
+        char newFile[FILE_NAME_MAX_SIZE];
+        SzPath = directory + '/' + SzPath;
+        //std::cout << SzPath << std::endl;
+        strncpy(newFolder, directory.c_str(), directory.length() + 1);
+        strncpy(newFile, SzPath.c_str(), SzPath.length() + 1);
 
-    strncpy(zipPath, directory.c_str(), directory.length() + 1);
+        if (0 != access(directory.c_str(), 0))
+        {
+            // if this folder not exist, create a new one.
+            mkdir(directory.c_str());   // 返回 0 表示创建成功，-1 表示失败
+            //换成 ::_mkdir  ::_access 也行，不知道什么意思
+        }
+        strncpy(folderPath, (directory + "/").c_str(), (directory + "/").length() + 1);
+
+        directory += ".zip";
+        CopyFile(szPath, newFile, false);
+
+
+        std::cout << folderPath << std::endl;
+
+        strncpy(zipPath, directory.c_str(), directory.length() + 1);
+        std::cout << "压缩中....." << std::endl;
         HZIP hz = CreateZip((TCHAR*)(zipPath), 0);
         show_file(folderPath, folderPath, hz);
         CloseZip(hz);
         return zipPath;
-    
 
+    }
 
  
 
-  //  for (int i = 0; i < szLength; i++)
-  //  {
-  //      if (szPath[i] == '.') {
-  //          should_change = false;
-  //          break;
-  //      }
-  //  }
-  //
-  //if (should_change)
-  //     {
-  //         if (szPath[strlen(szPath) - 1] != '/')
-  //         {
-  //             strcpy(zipPath, szPath);
-  //             int zipLength = strlen(zipPath);
-  //             zipPath[zipLength + 4] = zipPath[zipLength];
+    for (int i = 0; i < szLength; i++)
+    {
+        if (szPath[i] == '.') {
+            should_change = false;
+            break;
+        }
+    }
+  
+    if (should_change)
+    {
+           if (szPath[strlen(szPath) - 1] != '/')
+           {
+               strcpy(zipPath, szPath);
+               int zipLength = strlen(zipPath);
+               zipPath[zipLength + 4] = zipPath[zipLength];
 
-  //             zipPath[zipLength] = '.';
-  //             zipPath[zipLength + 1] = 'z';
-  //             zipPath[zipLength + 2] = 'i';
-  //             zipPath[zipLength + 3] = 'p';
+               zipPath[zipLength] = '.';
+               zipPath[zipLength + 1] = 'z';
+               zipPath[zipLength + 2] = 'i';
+               zipPath[zipLength + 3] = 'p';
 
-  //             int temp = strlen(szPath);
-  //             szPath[temp + 1] = szPath[temp];
-  //             szPath[temp] = '/';
-
-
-  //         }
-  //         else
-  //         {
-  //             strcpy(zipPath, szPath);
-  //             int zipLength = strlen(zipPath);
-  //             zipPath[zipLength + 3] = zipPath[zipLength];
-
-  //             zipPath[zipLength - 1] = '.';
-  //             zipPath[zipLength] = 'z';
-  //             zipPath[zipLength + 1] = 'i';
-  //             zipPath[zipLength + 2] = 'p';
-  //         }
-
-  //         HZIP hz = CreateZip((TCHAR*)(zipPath), 0);
-  //         show_file(szPath, szPath, hz);
-  //         CloseZip(hz);
-  //         return zipPath;
-  //     }
-
-  //     else
-  //     {
-  //         int index = 0;
-  //         int formatindex = 0;
-  //         int szLength = strlen(szPath);
-  //         for (int i = szLength - 1; i >= 0; i--)
-  //         {
-  //             if (szPath[i] == '.')
-  //             {
-  //                 index = i;
-  //                 break;
-  //             }
-  //         }
-  //         for (int i = szLength - 1; i >= 0; i--)
-  //         {
-  //             if (szPath[i] == '/')
-  //             {
-  //                 formatindex = i;
-  //                 break;
-  //             }
-  //         }
-
-  //         strcpy(zipPath, szPath);
-  //         int zipLength = strlen(zipPath);
-  //         //zipPath[] = zipPath[zipLength];
+               int temp = strlen(szPath);
+               szPath[temp + 1] = szPath[temp];
+               szPath[temp] = '/';
 
 
-  //         zipPath[index + 1] = 'z';
-  //         zipPath[index + 2] = 'i';
-  //         zipPath[index + 3] = 'p';
-  //         zipPath[index + 4] = '\0';
-  //         for (int i = formatindex + 1; i < szLength; i++)
-  //         {
-  //             saveZip[i - formatindex - 1] = szPath[i];
-  //         }
-  //         saveZip[szLength - formatindex - 1] = '\0';
+           }
+           else
+           {
+               strcpy(zipPath, szPath);
+               int zipLength = strlen(zipPath);
+               zipPath[zipLength + 3] = zipPath[zipLength];
+
+               zipPath[zipLength - 1] = '.';
+               zipPath[zipLength] = 'z';
+               zipPath[zipLength + 1] = 'i';
+               zipPath[zipLength + 2] = 'p';
+           }
+
+           std::cout << "压缩中....." << std::endl;
+           HZIP hz = CreateZip((TCHAR*)(zipPath), 0);
+           show_file(szPath, szPath, hz);
+           CloseZip(hz);
+           return zipPath;
+       }
+
+       else
+       {
+           int index = 0;
+           int formatindex = 0;
+           int szLength = strlen(szPath);
+           for (int i = szLength - 1; i >= 0; i--)
+           {
+               if (szPath[i] == '.')
+               {
+                   index = i;
+                   break;
+               }
+           }
+           for (int i = szLength - 1; i >= 0; i--)
+           {
+               if (szPath[i] == '/')
+               {
+                   formatindex = i;
+                   break;
+               }
+           }
+
+           strcpy(zipPath, szPath);
+           int zipLength = strlen(zipPath);
+           //zipPath[] = zipPath[zipLength];
 
 
-  //         HZIP hz = CreateZip((TCHAR*)(zipPath), 0);
-  //         ZipAdd(hz, (TCHAR*)(saveZip), (TCHAR*)(szPath));
-  //         CloseZip(hz);
-  //         return zipPath;
-  //     }
+           zipPath[index + 1] = 'z';
+           zipPath[index + 2] = 'i';
+           zipPath[index + 3] = 'p';
+           zipPath[index + 4] = '\0';
+           for (int i = formatindex + 1; i < szLength; i++)
+           {
+               saveZip[i - formatindex - 1] = szPath[i];
+           }
+           saveZip[szLength - formatindex - 1] = '\0';
+
+           std::cout << "压缩中....." << std::endl;
+           HZIP hz = CreateZip((TCHAR*)(zipPath), 0);
+           ZipAdd(hz, (TCHAR*)(saveZip), (TCHAR*)(szPath));
+           
+           CloseZip(hz);
+           return zipPath;
+       }
 }
 
 
@@ -275,11 +290,12 @@ int main(int argc, char* argv[])
     char* SERVER_IP = argv[2];
     char* FilePath = argv[1];
 
-
+    
     FilePath = ZIP(FilePath);
+    std::cout << "压缩完成" << std::endl;
 
     // 声明并初始化一个服务端(本地)的地址结构 
-    //std::cout << FilePath << std::endl;
+    std::cout << FilePath << std::endl;
     sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.S_un.S_addr = INADDR_ANY;

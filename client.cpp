@@ -90,8 +90,8 @@ int main(int argc, char* argv[])
 		}
 
 		printf("CONNECT\n");
-		int FileLen = 0;
-		int nCurrentPos = 0; //断点位置
+		long long FileLen = 0;
+		long long nCurrentPos = 0; //断点位置
 		UINT OpenFlags;
 		CFile PosFile;
 
@@ -115,23 +115,22 @@ int main(int argc, char* argv[])
 		if (recv(c_Socket, (char*)&FileLen, sizeof(FileLen), 0) != 0)
 		{
 			
-			int nChunkCount;
+			long long nChunkCount = (FileLen + CHUNK_SIZE - 1) / CHUNK_SIZE;
 			CFile file;
 
-			nChunkCount = (FileLen + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
 			if (file.Open((LPCTSTR)FilePath, OpenFlags))
 			{
-				file.Seek(nCurrentPos * CHUNK_SIZE, CFile::begin);
+				file.Seek((long long)nCurrentPos * CHUNK_SIZE, CFile::begin);
 				char* date = new char[CHUNK_SIZE];
-				for (int i = nCurrentPos; i < nChunkCount; i++)
+				for (long long i = nCurrentPos; i < nChunkCount; i++)
 				{
-					int nLeft;
+					long long nLeft;
 					if (i + 1 == nChunkCount)
 						nLeft = FileLen - CHUNK_SIZE * (nChunkCount - 1);
 					else
 						nLeft = CHUNK_SIZE;
-					int idx = 0;
+					long long idx = 0;
 					while (nLeft > 0)
 					{
 						int ret = recv(c_Socket, &date[idx], nLeft, 0);
@@ -147,7 +146,7 @@ int main(int argc, char* argv[])
 
 
 					CFile PosFile; //将断点写入PosFile.temp文件
-					int seekpos = i + 1;
+					long long seekpos = i + 1;
 					if (PosFile.Open((LPCTSTR)TMPFile, CFile::modeWrite | CFile::typeBinary | CFile::modeCreate));
 					{
 						PosFile.Write((char*)&seekpos, sizeof(seekpos));
@@ -157,24 +156,25 @@ int main(int argc, char* argv[])
 				file.Close();
 				delete[] date;
 			}
+
+
 			if (DeleteFile((LPCTSTR)TMPFile) != 0)
 			{
 				std::cout << "文件传输完成"<<std::endl;
+				
 				clock_t end_time = clock();
 				double Bps = FileLen / (double)(end_time - start_time);
 				double  tr = 1048576;
 				double MBs = Bps / tr*1000;
 				std::cout <<MBs <<" MB/s"<< std::endl;
-				HZIP hz = OpenZip((TCHAR*)(FilePath), 0);
-				SetUnzipBaseDir(hz, (TCHAR*)(filePath));
-				ZIPENTRY ze; GetZipItem(hz, -1, &ze); int numitems = ze.index;
-				for (int zi = 0; zi < numitems; zi++)
-				{
-					GetZipItem(hz, zi, &ze);
-					UnzipItem(hz, zi, ze.name);
-				}
-				CloseZip(hz);
+				
+				CString strRarPath = "\"WinRAR\\WinRAR.exe\" x -iext -ow -ver -- ";
+				CString strfinal = strRarPath + FilePath +" "+filePath;
+				printf("%s\n", strfinal);
+				system(strfinal);
 
+				std::cout << "解压完成" << std::endl;
+				remove(FilePath);
 				
 			}
 		}
